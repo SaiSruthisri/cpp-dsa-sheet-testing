@@ -175,3 +175,15 @@ Contributions of any kind are welcome!
 This project is licensed under the MIT License.  
 See the [LICENSE](LICENSE) file for details.
 
+## Daily POTD Email Job
+
+- The GitHub Actions workflow `.github/workflows/send-potd.yml` triggers daily at 09:30 IST.
+- It calls `GET /api/send-potd` on the deployed site.
+- The endpoint requires a header `x-cron-secret` that must match `CRON_SECRET` set in your environment.
+
+Environment variables required:
+
+- `CRON_SECRET`: Shared secret used by the cron caller and the API route.
+- `MONGO_URI`: Connection string (without DB name) for MongoDB.
+- `GOOGLE_APP_USER`, `GOOGLE_APP_PASSWORD`: Credentials for Nodemailer (Gmail app password recommended).
+
