@@ -64,9 +64,9 @@ export default function AvatarSettingsPage() {
         <div className="flex items-center gap-6 mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
             {avatar ? (
-              <Image src={avatar} alt="Avatar" width={96} height={96} />
+              <img src={avatar} alt="Avatar" width={96} height={96} />
             ) : (
-              <Image src="/images/default-avatar.svg" alt="Default" width={96} height={96} />
+              <img src="/images/default-avatar.svg" alt="Default" width={96} height={96} />
             )}
           </div>
           <div className="flex-1">

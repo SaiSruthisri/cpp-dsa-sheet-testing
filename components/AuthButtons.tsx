@@ -234,9 +234,9 @@ href={user ? "/profile/settings/avatar" : "#"}
 >
   <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 to-purple-500">
     {user?.avatar ? (
-      <Image src={user.avatar} alt="Avatar" width={32} height={32} />
+      <img src={user.avatar} alt="Avatar" width={32} height={32} />
     ) : (
-      <Image src="/images/default-avatar.svg" alt="Default Avatar" width={32} height={32} />
+      <img src="/images/default-avatar.svg" alt="Default Avatar" width={32} height={32} />
     )}
   </div>
 </motion.a>
