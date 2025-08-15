@@ -146,11 +146,8 @@ We’re here to guide you — don’t hesitate to ask in the Discord group or co
 ## Profile Avatar Uploads
 
 - Upload, replace, and delete your profile picture at `/profile/settings/avatar` (auth required).
-- Default avatar is shown if none is set (`public/images/default-avatar.png`).
-- Configure image hosting (example: Cloudinary) via env vars:
-  - `CLOUDINARY_CLOUD_NAME`
-  - `CLOUDINARY_API_KEY`
-  - `CLOUDINARY_API_SECRET`
+- Default avatar is shown if none is set (`public/images/default-avatar.svg`).
+- Avatars are stored directly in the database as base64 data URLs (no external storage needed).
 
 ## Learn More
 
