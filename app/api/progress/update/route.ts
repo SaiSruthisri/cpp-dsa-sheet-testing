@@ -18,13 +18,14 @@ interface ProgressType {
   hardSolved: number;
   totalSolved: number;
   topicsProgress: TopicProgress[];
+  solvedQuestionKeys: string[];
   save: () => Promise<void>;
   toObject: () => object;
 }
 export async function POST(req: Request) {
   try {
     await connect();
-    const { userId, questionDifficulty, topicName, topicTotalQuestions } = await req.json();
+    const { userId, questionDifficulty, topicName, topicTotalQuestions, solvedQuestionKey } = await req.json();
 
     if (!userId)
       return NextResponse.json({ message: "UserId required" }, { status: 400 });
@@ -47,34 +48,42 @@ export async function POST(req: Request) {
     }
     progress.lastVisited = today;
 
-    // --- Difficulty Counters ---
-    if (questionDifficulty === "easy") progress.easySolved += 1;
-    if (questionDifficulty === "medium") progress.mediumSolved += 1;
-    if (questionDifficulty === "hard") progress.hardSolved += 1;
+    // --- Per-question idempotency ---
+    let newlySolvedThisCall = false;
+    if (solvedQuestionKey) {
+      const already = progress.solvedQuestionKeys?.includes(solvedQuestionKey);
+      if (!already) {
+        progress.solvedQuestionKeys = [...(progress.solvedQuestionKeys || []), solvedQuestionKey];
+        newlySolvedThisCall = true;
+      }
+    }
 
-    // Auto-calculate totalSolved
-    progress.totalSolved =
-      Number(progress.easySolved ?? 0) +
-      Number(progress.mediumSolved ?? 0) +
-      Number(progress.hardSolved ?? 0);
+    // --- Difficulty Counters (only increment on first solve) ---
+    if (newlySolvedThisCall && questionDifficulty) {
+      if (questionDifficulty === "easy") progress.easySolved += 1;
+      if (questionDifficulty === "medium") progress.mediumSolved += 1;
+      if (questionDifficulty === "hard") progress.hardSolved += 1;
 
+      progress.totalSolved =
+        Number(progress.easySolved ?? 0) +
+        Number(progress.mediumSolved ?? 0) +
+        Number(progress.hardSolved ?? 0);
+    }
 
-    // --- Topic-wise Progress ---
+    // --- Topic-wise Progress (optional) ---
     if (topicName && topicTotalQuestions) {
-      const topicIndex: number = (progress as ProgressType).topicsProgress.findIndex(
+      const topicIndex: number = (progress as unknown as ProgressType).topicsProgress.findIndex(
         (t: TopicProgress) => t.topicName === topicName
       );
 
       if (topicIndex > -1) {
-        // Update existing topic
-        if (progress.topicsProgress[topicIndex].solvedCount < topicTotalQuestions) {
+        if (progress.topicsProgress[topicIndex].solvedCount < topicTotalQuestions && newlySolvedThisCall) {
           progress.topicsProgress[topicIndex].solvedCount += 1;
         }
       } else {
-        // Add new topic
         progress.topicsProgress.push({
           topicName,
-          solvedCount: 1,
+          solvedCount: newlySolvedThisCall ? 1 : 0,
           totalQuestions: topicTotalQuestions
         });
       }

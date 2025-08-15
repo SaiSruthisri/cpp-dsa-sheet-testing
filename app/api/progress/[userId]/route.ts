@@ -27,6 +27,7 @@ export async function GET(
           totalSolved: 0,
           streakCount: 0,
           topicsProgress: [],
+          solvedQuestionKeys: [],
           lastVisited: null
         },
         badges: badgeDoc && 'badges' in badgeDoc ? badgeDoc.badges : []
@@ -41,6 +42,7 @@ export async function GET(
         totalSolved: progressDoc.totalSolved,
         streakCount: progressDoc.streakCount,
         topicsProgress: progressDoc.topicsProgress || [],
+        solvedQuestionKeys: progressDoc.solvedQuestionKeys || [],
         lastVisited: progressDoc.lastVisited
       },
       badges: badgeDoc?.badges || []

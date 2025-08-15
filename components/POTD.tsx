@@ -16,13 +16,17 @@ type POTDProps = {
   updateStreak: () => void;
 };
 
+function getISTDateKey(date: Date) {
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+  return fmt.format(date);
+}
+
 export default function POTD({ potd, updateStreak }: POTDProps) {
   const [isSolved, setIsSolved] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [today, setToday] = useState('');
+  const [todayKey, setTodayKey] = useState('');
 
-  // ✅ Check if user is logged in
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -44,46 +48,31 @@ export default function POTD({ potd, updateStreak }: POTDProps) {
     checkAuth();
   }, []);
 
-  // ✅ Check if today's POTD is already done
+  // Check POTD done only by daily key (not by list state)
   useEffect(() => {
-    const currentDate = new Date().toDateString();
-    setToday(currentDate);
-    const lastDone = localStorage.getItem('potd_last_done');
-    setIsSolved(currentDate === lastDone);
+    const key = getISTDateKey(new Date());
+    setTodayKey(key);
+    const lastDone = localStorage.getItem('potd:' + key);
+    setIsSolved(!!lastDone);
   }, []);
 
-  // ✅ Mark POTD as done and update backend progress
   const handleMarkDone = async () => {
-    if (!user) {
-      console.error("User not logged in, cannot update progress.");
-      return;
-    }
+    if (!user || !potd) return;
 
     try {
-      const res = await axios.post("/api/progress/update", {
-        userId: user._id, // Required by backend
-        questionDifficulty: potd?.difficulty || "medium", // Use actual difficulty
-        topicCompleted: null // Pass topic name if applicable
+      const solvedQuestionKey = `${potd.topicId ?? 't'}-${potd.id}`;
+      await axios.post("/api/progress/update", {
+        userId: user._id,
+        questionDifficulty: potd.difficulty || "medium",
+        solvedQuestionKey,
       });
 
-      if (res.status === 200) {
-        console.log("Progress updated:", res.data);
+      localStorage.setItem('potd:' + todayKey, 'true');
+      setIsSolved(true);
+      updateStreak();
 
-        // Mark locally to avoid multiple submissions in same day
-        localStorage.setItem('potd_last_done', today);
-        setIsSolved(true);
-
-        // Optionally update streak UI if needed
-        updateStreak();
-
-        // Play success sound
-        const audio = new Audio('/sounds/done.mp3');
-        audio.play().catch(err => {
-          console.log("Audio play blocked or failed", err);
-        });
-      } else {
-        console.error("Failed to update progress", res.data);
-      }
+      const audio = new Audio('/sounds/done.mp3');
+      audio.play().catch(() => {});
     } catch (err) {
       console.error("Error updating progress:", err);
     }

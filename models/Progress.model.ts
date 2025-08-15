@@ -18,6 +18,8 @@ export interface IProgress extends Document {
   topicsCompleted: string[]; // still keeping old field
   topicsProgress: ITopicProgress[];
 
+  solvedQuestionKeys: string[]; // e.g., "<topicId>-<questionId>"
+
   lastVisited: Date;
 }
 
@@ -42,6 +44,8 @@ const ProgressSchema = new Schema<IProgress>(
     
     topicsCompleted: [{ type: String }],
     topicsProgress: [TopicProgressSchema],
+    
+    solvedQuestionKeys: { type: [String], default: [] },
     
     lastVisited: { type: Date, default: null }
   },

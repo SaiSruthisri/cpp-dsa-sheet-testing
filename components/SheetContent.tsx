@@ -21,6 +21,15 @@ interface User {
   avatar: string;
 }
 
+// Helper to prefill solved state from backend solvedQuestionKeys
+function primeProgressFromSolvedKeys(keys: string[]) {
+  const primed: { [id: string]: { isSolved?: boolean } } = {};
+  keys.forEach((k) => {
+    primed[k] = { ...(primed[k] || {}), isSolved: true };
+  });
+  return primed;
+}
+
 type SheetContentProps = {
   difficultyFilter: string;
   statusFilter: string;
@@ -65,27 +74,33 @@ export default function SheetContent({
   });
 
 
-  // Auth check (runs once)
+  // Auth check (runs once) + prime progress from backend solved keys
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       try {
-        const res = await axios.get("/api/check-auth");
-        if (res.status === 200) {
+        const auth = await axios.get("/api/check-auth");
+        if (auth.status === 200) {
           setIsLoggedIn(true);
-          setUser(res.data?.user);
+          setUser(auth.data?.user);
+          // Load backend progress including solvedQuestionKeys
+          const p = await axios.get(`/api/progress/${auth.data?.user?._id}`);
+          const keys = p.data?.progress?.solvedQuestionKeys || [];
+          if (Array.isArray(keys) && keys.length > 0) {
+            setProgress((prev) => ({ ...primeProgressFromSolvedKeys(keys), ...prev }));
+          }
         }
       } catch (err) {
-        console.error("Auth check failed:", err);
+        console.error("Init failed:", err);
       }
     };
-    checkAuth();
+    init();
   }, []);
 
   // Load & persist per-question progress (local cache)
   useEffect(() => {
     try {
       const stored = localStorage.getItem("dsa-progress");
-      if (stored) setProgress(JSON.parse(stored));
+      if (stored) setProgress((prev) => ({ ...prev, ...JSON.parse(stored) }));
     } catch (e) {
       console.error("Failed to parse dsa-progress from localStorage", e);
     }
@@ -116,6 +131,7 @@ async function sendProgressUpdate(payload: {
   topicCompleted?: string | null; // still used for badge logic
   topicName?: string | null;
   topicTotalQuestions?: number | null;
+  solvedQuestionKey?: string | null;
 }) {
   try {
     if (!isLoggedIn || !user) return null;
@@ -125,7 +141,8 @@ async function sendProgressUpdate(payload: {
       questionDifficulty: payload.questionDifficulty ?? null,
       topicCompleted: payload.topicCompleted ?? null, // only for badge triggers
       topicName: payload.topicName ?? null,
-      topicTotalQuestions: payload.topicTotalQuestions ?? null
+      topicTotalQuestions: payload.topicTotalQuestions ?? null,
+      solvedQuestionKey: payload.solvedQuestionKey ?? null,
     };
 
     const res = await axios.post("/api/progress/update", body);
@@ -178,7 +195,8 @@ const toggleCheckbox = async (
         questionDifficulty: questionDifficulty ?? null,
         topicCompleted: topicCompleted ?? null, // still can pass if you want immediate badge
         topicName: topicName ?? null,
-        topicTotalQuestions: topicTotalQuestions ?? null
+        topicTotalQuestions: topicTotalQuestions ?? null,
+        solvedQuestionKey: id,
       });
 
       const audio = new Audio("/sounds/done.mp3");
