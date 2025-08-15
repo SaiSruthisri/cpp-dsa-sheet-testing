@@ -226,22 +226,19 @@ export default function AuthButtons() {
         </motion.a>
       ) : (
 <motion.a
-href={user ? `/profile/${encodeURIComponent(user._id)}` : "#"}
+href={user ? "/profile/settings/avatar" : "#"}
         
   className="flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-200 text-white text-sm font-medium border border-white/10"
   whileHover={{ scale: 1.05 }}
   whileTap={{ scale: 0.95 }}
 >
-  <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-xs font-bold">
+  <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 to-purple-500">
     {user?.avatar ? (
-      <Image src={user.avatar} alt="U" width={25} height={25} />
+      <Image src={user.avatar} alt="Avatar" width={32} height={32} />
     ) : (
-      `${user?.full_name?.split(" ")[0]?.charAt(0) ?? "U"}${
-        user?.full_name?.split(" ")[1]?.charAt(0) ?? ""
-      }`.toUpperCase()
+      <Image src="/images/default-avatar.svg" alt="Default Avatar" width={32} height={32} />
     )}
   </div>
-  <span className="max-w-20 truncate">{user?.full_name}</span>
 </motion.a>
 
       )}
